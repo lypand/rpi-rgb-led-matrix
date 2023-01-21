@@ -14,7 +14,6 @@ frozenLocations = np.full((33,17), False, dtype=bool)
 frozenLocations[0, :] = True
 frozenLocations[32, :] = True
 frozenLocations[:, 16] = True
-print(frozenLocations)
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
 
 class Tetris(SampleBase):

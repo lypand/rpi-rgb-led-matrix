@@ -19,6 +19,7 @@ matrix = None
 gameOver = False
 score = 0
 lastDirectionCommitted = 'right'
+backToMainMenu = False
 
 class SimpleSquare(SampleBase):
     def __init__(self, *args, **kwargs):
@@ -31,7 +32,7 @@ class SimpleSquare(SampleBase):
         global fruit_position
         global gameOver
         global score
-
+        global backToMainMenu
         matrix = self.matrix
         while not gameOver:
             self.matrix.Clear()
@@ -48,15 +49,17 @@ class SimpleSquare(SampleBase):
         textColor = graphics.Color(random.randrange(1, 225), random.randrange(1, 225), random.randrange(1, 225))
         pos = offscreen_canvas.width    
         
-        while True:
+        while not backToMainMenu:
             offscreen_canvas.Clear()
-            len = graphics.DrawText(offscreen_canvas, font, pos, 10, textColor, "Score: " + str(score) + "  Game Over!!!!")
+            len = graphics.DrawText(offscreen_canvas, font, pos, 10, textColor, "Score: " + str(score) + "  Game Over Press Start.")
             pos -= 1
             if (pos + len < 0):
                 pos = offscreen_canvas.width
-            time.sleep(0.05)
+            time.sleep(0.03)
             offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
 
+        offscreen_canvas.Clear()
+        self.matrix.Clear()
 
 def canvasUpdate():
     global left
@@ -66,14 +69,15 @@ def canvasUpdate():
     global x
     global y
     global fruit_position
-    global speed
     global matrix
     global gameOver
     global score
     global lastDirectionCommitted
 
     fruit_spawn = False
-    while 1:
+    gameOver = False
+
+    while not gameOver:
         if(left): 
             x-=1
             lastDirectionCommitted = 'left'
@@ -107,8 +111,36 @@ def canvasUpdate():
         if matrix != None and (x >= matrix.width or x<0 or y >= matrix.height or y < 0):
             gameOver = True
         time.sleep(delay)
-    
 
+def resetVariables():
+    global x
+    global y
+    global left
+    global right
+    global up
+    global down
+    global delay
+    global snake_body 
+    global fruit_position
+    global matrix
+    global gameOver
+    global score
+    global lastDirectionCommitted 
+    global backToMainMenu
+    x = 0
+    y = 0
+    left = False
+    right = True
+    up = False
+    down = False
+    delay = .1
+    snake_body = [[x,y], [x-1,y], [x-2,y]]
+    fruit_position = [random.randrange(1, 30),random.randrange(1, 14) ]
+    matrix = None
+    gameOver = False
+    score = 0
+    lastDirectionCommitted = 'right'
+    backToMainMenu = False
 def keyListener():
     global x
     global y
@@ -119,39 +151,41 @@ def keyListener():
     global up
     global down
     global delay
-    while 1:
+    global gameOver
+    global backToMainMenu
+
+    gameOver = False
+    while not gameOver or not backToMainMenu:
         events = get_gamepad()
+
         for event in events:
             if event.code == 'ABS_X' and event.state == 0 and lastDirectionCommitted != 'right':
-                print('Left')
                 left = True
                 right = False
                 up = False
                 down = False
             if event.code == 'ABS_X' and event.state == 255 and lastDirectionCommitted != 'left':
-                print('Right')
                 left = False
                 right = True
                 up = False
                 down = False
             if event.code == 'ABS_Y' and event.state == 255 and lastDirectionCommitted != 'up':
-                print('Down')
                 left = False
                 right = False
                 up = False
                 down = True
             if event.code == 'ABS_Y' and event.state == 0 and lastDirectionCommitted != 'down':
-                print('Up')
                 left = False
                 right = False
                 up = True
                 down = False
             if event.code == 'MSC_SCAN' and event.state == 589826:
                 delay -= .005
+            if event.code == 'BTN_BASE4' and gameOver:
+                backToMainMenu = True
     
 # Main function
 if __name__ == "__main__":
-
     keyListenerThread = Thread(target = keyListener)
     keyListenerThread.start()
 
@@ -159,6 +193,5 @@ if __name__ == "__main__":
     canvasUpdateThread.start()
 
     simple_square = SimpleSquare()
-    if (not simple_square.process()):
-        simple_square.print_help()
+    simple_square.process()
 

@@ -11,13 +11,13 @@ from enum import Enum
 import os
 
 class GameOptions(Enum):
-    SNAKE = 0
+    SNAKED = 0
     TETRIS = 1
 
 currentPos = 0
 generateNewColor = True
 selectionMade = False
-currentSelection = GameOptions.SNAKE
+currentSelection = GameOptions.SNAKED
 
 class StartUp(SampleBase):
     def __init__(self, *args, **kwargs):
@@ -57,6 +57,7 @@ def keyListener():
     global selectionMade
     while not selectionMade:
         events = get_gamepad()
+        print("Main key listener")
         for event in events:
             if event.code == 'ABS_Y' and event.state == 255:
                 currentSelection = GameOptions((currentSelection.value + 1) % (len(GameOptions)))
@@ -67,30 +68,43 @@ def keyListener():
             if event.code == 'MSC_SCAN' and event.state == 589826:
                 selectionMade = True
 
+def resetVariables():
+    global generateNewColor
+    global selectionMade
+    generateNewColor = True
+    selectionMade = False
+
 # Main function
 if __name__ == "__main__":
-    Thread(target = keyListener).start()
-
-    selection = StartUp().process()
-
-    if selection == 0:
-        keyListenerThread = Thread(target = snake.keyListener)
-        keyListenerThread.start()
-
-        canvasUpdateThread = Thread(target = snake.canvasUpdate)
-        canvasUpdateThread.start()
-
-        simple_square = snake.SimpleSquare()
-
-        if (not simple_square.process()):
-            simple_square.print_help()
-    if selection == 1:
-        keyListenerThread = Thread(target = tetris.keyListener)
-        keyListenerThread.start()
-
-        tetris = tetris.Tetris()
-        matrix = tetris.process()
-        tetris.start()
 
 
+    while(True):
+
+        resetVariables()
+
+        mainThreadKeyListener = Thread(target=keyListener)
+        mainThreadKeyListener.start()
+        selection = StartUp().process()
+        mainThreadKeyListener.join()
+
+        if selection == 0:
+            snake.resetVariables()
+            keyListenerThread = Thread(target = snake.keyListener)
+            keyListenerThread.start()
+
+            canvasUpdateThread = Thread(target = snake.canvasUpdate)
+            canvasUpdateThread.start()
+
+            simple_square = snake.SimpleSquare()
+            simple_square.process()
+
+            keyListenerThread.join()
+            canvasUpdateThread.join()
+
+        if selection == 1:
+            keyListenerThread = Thread(target = tetris.keyListener)
+            keyListenerThread.start()
+            tetris = tetris.Tetris()
+            matrix = tetris.process()
+            tetris.start()
     

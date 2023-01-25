@@ -11,7 +11,7 @@ import copy
 
 currentShape = None
 frozenLocations = np.full((33,17), False, dtype=bool)
-frozenLocations[0, :] = True
+frozenLocations[-1, :] = True
 frozenLocations[32, :] = True
 frozenLocations[:, 16] = True
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
@@ -32,12 +32,12 @@ class Tetris(SampleBase):
                     print("Game Over")
             time.sleep(1)
             tempCurrentShape = copy.copy(currentShape)
-            tempCurrentShape.yOffset += 1
+            tempCurrentShape.xOffset += 1
             intersection = tempCurrentShape.intersects()
             if(intersection):
                 currentShape.freeze()
             else:
-                currentShape.addToY(1)
+                currentShape.addToX(1)
 
 class coordinate:
     def __init__(self, x, y):
@@ -144,24 +144,24 @@ def keyListener():
         for event in events:
             if event.code == 'ABS_X' and event.state == 0:
                 tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.xOffset = tempCurrentShape.xOffset - 1
+                tempCurrentShape.yOffset = tempCurrentShape.yOffset + 1
                 intersection = tempCurrentShape.intersects()
                 if(not intersection):
-                    currentShape.addToX(-1)
+                    currentShape.addToY(1)
             if event.code == 'ABS_X' and event.state == 255:
                 tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.xOffset = tempCurrentShape.xOffset + 1
+                tempCurrentShape.yOffset = tempCurrentShape.yOffset - 1
                 intersection = tempCurrentShape.intersects()
                 if(not intersection):
-                    currentShape.addToX(1)
+                    currentShape.addToY(-1)
             if event.code == 'ABS_Y' and event.state == 255:
                 tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.yOffset += 1
+                tempCurrentShape.xOffset += 1
                 intersection = tempCurrentShape.intersects()
                 if(intersection):
                     currentShape.freeze()
                 else:
-                    currentShape.addToY(1)             
+                    currentShape.addToX(1)             
             if(checkUp):
                 checkUp = False
                 if(event.state == 0):

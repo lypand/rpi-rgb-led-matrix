@@ -102,9 +102,10 @@ if __name__ == "__main__":
             canvasUpdateThread.join()
 
         if selection == 1:
-            keyListenerThread = Thread(target = tetris.keyListener)
-            keyListenerThread.start()
+            tetrisKeyListener = Thread(target = tetris.keyListener)
+            tetrisKeyListener.start()
             tetris = tetris.Tetris()
             matrix = tetris.process()
             tetris.start()
+            tetrisKeyListener.join()
     

@@ -50,13 +50,13 @@ class Shape:
     global frozenLocations
 
     shapes = [
-        [[1, 5, 9, 13], [4, 5, 6, 7]],
-        [[4, 5, 9, 10], [2, 6, 5, 9]],
-        [[6, 7, 9, 10], [1, 5, 6, 10]],
-        [[1, 2, 5, 9], [0, 4, 5, 6], [1, 5, 9, 8], [4, 5, 6, 10]],
-        [[1, 2, 6, 10], [5, 6, 7, 9], [2, 6, 10, 11], [3, 5, 6, 7]],
-        [[1, 4, 5, 6], [1, 4, 5, 9], [4, 5, 6, 9], [1, 5, 6, 9]],
-        [[1, 2, 5, 6]]]
+        [[0, 1, 4, 5]],
+        [[1, 5, 9, 13], [4, 5, 6, 7],[2, 6, 10, 14],[8, 9, 10, 11]],                           
+        [[0, 1, 5, 9], [3, 7, 6, 5],[6, 10, 14, 15],[12, 8, 9, 10]],
+        [[2, 1, 5, 9], [5, 6, 7, 11],[6, 10, 14, 13],[4, 8, 9, 10]],
+        [[1, 4, 5, 6], [2, 6, 10, 7], [9, 10, 11, 14], [13, 9, 5, 8]],
+        [[1, 5, 4, 8], [1, 2, 6, 7], [7, 11, 10, 14], [8, 9, 13, 14]],
+        [[0, 4, 5, 9], [2, 3, 5, 6], [6, 10, 11, 15], [9, 10, 12, 13]]]
 
     lookupTable = {
         0: coordinate(0, 0),
@@ -77,6 +77,15 @@ class Shape:
         15: coordinate(3,3),
     }
 
+    colorLookup = [
+        [255, 0, 0],
+        [255, 255, 0],
+        [255, 255, 255],
+        [0, 255, 255],
+        [0, 0, 255],
+        [0, 255, 0],
+        [100, 50, 100]]
+
     def __init__(self, shapeType, matrix):
         self.xOffset = 0
         self.yOffset = 0
@@ -86,13 +95,16 @@ class Shape:
         self.shape = self.shapes[self.shapeType]
         self.matrix = matrix
         self.frozen = False
+        self.color = self.colorLookup[shapeType]
+        if(shapeType is 1): 
+            self.color
 
     def print(self):
         for loc in self.currentSet:
             coordinate = self.lookupTable[loc]
             xValue = coordinate.x + self.xOffset
             yValue = coordinate.y + self.yOffset
-            self.matrix.SetPixel(xValue, yValue, 150,150,150)
+            self.matrix.SetPixel(xValue, yValue, self.color[0],self.color[1],self.color[2])
 
     def clear(self):
         for loc in self.currentSet:
@@ -105,7 +117,7 @@ class Shape:
             coordinate = self.lookupTable[loc]
             xValue = coordinate.x + self.xOffset
             yValue = coordinate.y + self.yOffset
-            frozenLocations[xValue+1][yValue] = True
+            frozenLocations[xValue][yValue] = True
 
     def rotate(self):
         self.clear()
@@ -127,12 +139,19 @@ class Shape:
         self.yOffset += value
         self.print()
 
+    def tempRotateCheck(self):
+        if(self.rotation + 1 >= len(self.shape)):
+            self.rotation = 0
+        else: 
+            self.rotation += 1
+        self.currentSet = self.shapes[self.shapeType][self.rotation]
+
     def intersects(self):
         for loc in self.currentSet:
             coordinate = self.lookupTable[loc]
             xValue = coordinate.x + self.xOffset
             yValue = coordinate.y + self.yOffset
-            if(frozenLocations[xValue+1][yValue]):
+            if(frozenLocations[xValue][yValue]):
                 return True
         return False                
 
@@ -166,14 +185,9 @@ def keyListener():
                 checkUp = False
                 if(event.state == 0):
                     tempCurrentShape = copy.copy(currentShape)
-                    if(tempCurrentShape.rotation + 1 >= len(tempCurrentShape.shape)):
-                        tempCurrentShape.rotation = 0
-                    else: 
-                        tempCurrentShape.rotation += 1
+                    tempCurrentShape.tempRotateCheck()
                     intersection = tempCurrentShape.intersects()
-                    if(intersection):
-                        currentShape.freeze()
-                    else:
+                    if(not intersection):
                         currentShape.rotate()
             if event.code == 'MSC_SCAN' and event.state == 589826:
                 checkUp = True

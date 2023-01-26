@@ -10,6 +10,9 @@ import numpy as np
 import copy
 
 currentShape = None
+holdDown = False
+holdLeft = False
+holdRight = False
 frozenLocations = np.full((33,17), False, dtype=bool)
 frozenLocations[-1, :] = True
 frozenLocations[32, :] = True
@@ -153,34 +156,77 @@ class Shape:
             yValue = coordinate.y + self.yOffset
             if(frozenLocations[xValue][yValue]):
                 return True
-        return False                
+        return False
 
+def shapeDown(currentShape):
+    global holdDown
+    while(holdDown):
+        tempCurrentShape = copy.copy(currentShape)
+        tempCurrentShape.xOffset += 1
+        intersection = tempCurrentShape.intersects()
+        if(intersection):
+            currentShape.freeze()
+        else:
+            currentShape.addToX(1)    
+        time.sleep(.1) 
+
+def shapeLeft(currentShape):
+    global holdLeft
+    while(holdLeft):
+        print('left')
+        tempCurrentShape = copy.copy(currentShape)
+        tempCurrentShape.yOffset = tempCurrentShape.yOffset + 1
+        intersection = tempCurrentShape.intersects()
+        if(not intersection):
+            currentShape.addToY(1)    
+        time.sleep(.1)   
+
+def shapeRight(currentShape):
+    global holdRight
+    while(holdRight):
+        tempCurrentShape = copy.copy(currentShape)
+        tempCurrentShape.yOffset = tempCurrentShape.yOffset - 1
+        intersection = tempCurrentShape.intersects()
+        if(not intersection):
+            currentShape.addToY(-1)    
+        time.sleep(.1) 
+
+                    
 def keyListener():
     global currentShape
     checkUp = False
+    global holdDown
+    global holdLeft
+    global holdRight
+    
     while 1:
         events = get_gamepad()
         for event in events:
+            print('code ' + event.code + ' state ' + str(event.state))
+
+            #Left
             if event.code == 'ABS_X' and event.state == 0:
-                tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.yOffset = tempCurrentShape.yOffset + 1
-                intersection = tempCurrentShape.intersects()
-                if(not intersection):
-                    currentShape.addToY(1)
+                holdLeft = True
+                Thread(target = shapeLeft, args=(currentShape,)).start()
+
+            #Right
             if event.code == 'ABS_X' and event.state == 255:
-                tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.yOffset = tempCurrentShape.yOffset - 1
-                intersection = tempCurrentShape.intersects()
-                if(not intersection):
-                    currentShape.addToY(-1)
+                holdRight = True
+                Thread(target = shapeRight, args=(currentShape,)).start()
+
+            #Left + Right reset
+            if event.code == 'ABS_X' and event.state == 127:
+                holdRight = False
+                holdLeft = False
+
+            #Down 
             if event.code == 'ABS_Y' and event.state == 255:
-                tempCurrentShape = copy.copy(currentShape)
-                tempCurrentShape.xOffset += 1
-                intersection = tempCurrentShape.intersects()
-                if(intersection):
-                    currentShape.freeze()
-                else:
-                    currentShape.addToX(1)             
+                holdDown = True
+                Thread(target = shapeDown, args=(currentShape,)).start()
+                
+            if event.code == 'ABS_Y' and event.state == 127:
+                holdDown = False
+
             if(checkUp):
                 checkUp = False
                 if(event.state == 0):

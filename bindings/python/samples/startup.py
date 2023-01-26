@@ -11,13 +11,13 @@ from enum import Enum
 import os
 
 class GameOptions(Enum):
-    SNAKED = 0
+    SNAKE = 0
     TETRIS = 1
 
 currentPos = 0
 generateNewColor = True
 selectionMade = False
-currentSelection = GameOptions.SNAKED
+currentSelection = GameOptions.SNAKE
 
 class StartUp(SampleBase):
     def __init__(self, *args, **kwargs):

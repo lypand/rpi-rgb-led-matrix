@@ -8,7 +8,11 @@ import sys
 import os
 import numpy as np
 import copy
+from rgbmatrix import graphics
+import os
 
+backToMainMenu = False
+score = 0
 currentShape = None
 holdDown = False
 holdLeft = False
@@ -17,6 +21,7 @@ frozenLocations = np.full((33,17), False, dtype=bool)
 frozenLocations[-1, :] = True
 frozenLocations[32, :] = True
 frozenLocations[:, 16] = True
+gameOver = False
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
 
 class Tetris(SampleBase):
@@ -25,14 +30,15 @@ class Tetris(SampleBase):
 
     def start(self):
         global currentShape
-        currentShape = Shape(random.randrange(0,6), self.matrix)
-        currentShape.print()
-
-        while True:
+        global gameOver
+        currentShape = Shape(random.randrange(5,6), self.matrix)
+        
+        while not gameOver:
             if(currentShape.frozen):
+                removeCompletedLines(self.matrix)
                 currentShape = Shape(random.randrange(0,6), self.matrix)
                 if(currentShape.intersects()):
-                    print("Game Over")
+                    gameOver = True
             time.sleep(1)
             tempCurrentShape = copy.copy(currentShape)
             tempCurrentShape.xOffset += 1
@@ -41,6 +47,27 @@ class Tetris(SampleBase):
                 currentShape.freeze()
             else:
                 currentShape.addToX(1)
+
+
+        offscreen_canvas = self.matrix.CreateFrameCanvas()
+        font = graphics.Font()
+        dirname = os.path.dirname(__file__)
+        fontFileLocation = os.path.join(dirname, 'fonts/7x13.bdf')
+        font.LoadFont(fontFileLocation)
+        textColor = graphics.Color(random.randrange(1, 225), random.randrange(1, 225), random.randrange(1, 225))
+        pos = offscreen_canvas.width    
+        
+        while not backToMainMenu:
+            offscreen_canvas.Clear()
+            len = graphics.DrawText(offscreen_canvas, font, pos, 10, textColor, "Score: " + str(score) + "  Game Over Press Start.")
+            pos -= 1
+            if (pos + len < 0):
+                pos = offscreen_canvas.width
+            time.sleep(0.03)
+            offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
+
+        offscreen_canvas.Clear()
+        self.matrix.Clear()           
 
 class coordinate:
     def __init__(self, x, y):
@@ -158,6 +185,37 @@ class Shape:
                 return True
         return False
 
+def removeCompletedLines(matrix): 
+    global frozenLocations;
+    global score 
+    complete = None
+    rowsToRemove = [] 
+    for x, sub_list in enumerate(frozenLocations):
+        if complete:
+            rowsToRemove.append(x-1)
+            frozenLocations = np.delete(frozenLocations, x-1, 0)
+            row = np.full((1,17), False)
+            score = score + 1
+            frozenLocations = np.insert(frozenLocations, 0, row, axis=0)
+        if x > 31: 
+            break
+        complete = True
+        for y, value in enumerate(sub_list):
+            if value == False:
+                complete = False  
+    printFrozenLocations(matrix)
+
+
+def printFrozenLocations(matrix):
+    global frozenLocations
+    for x, sub_list in enumerate(frozenLocations):
+        for y, value in enumerate(sub_list):
+            matrix.SetPixel(x, y, 0,0,0)
+    for x, sub_list in enumerate(frozenLocations):
+        for y, value in enumerate(sub_list):
+            if(value): 
+                matrix.SetPixel(x, y, 34,45,123)
+
 def shapeDown(currentShape):
     global holdDown
     while(holdDown):
@@ -173,7 +231,6 @@ def shapeDown(currentShape):
 def shapeLeft(currentShape):
     global holdLeft
     while(holdLeft):
-        print('left')
         tempCurrentShape = copy.copy(currentShape)
         tempCurrentShape.yOffset = tempCurrentShape.yOffset + 1
         intersection = tempCurrentShape.intersects()
@@ -198,12 +255,12 @@ def keyListener():
     global holdDown
     global holdLeft
     global holdRight
+    global gameOver
+    global backToMainMenu
     
-    while 1:
+    while not gameOver or not backToMainMenu:
         events = get_gamepad()
         for event in events:
-            print('code ' + event.code + ' state ' + str(event.state))
-
             #Left
             if event.code == 'ABS_X' and event.state == 0:
                 holdLeft = True
@@ -237,6 +294,9 @@ def keyListener():
                         currentShape.rotate()
             if event.code == 'MSC_SCAN' and event.state == 589826:
                 checkUp = True
+
+            if event.code == 'BTN_BASE4' and gameOver:
+                backToMainMenu = True
 
 # Main function
 if __name__ == "__main__":

@@ -7,12 +7,14 @@ from inputs import get_gamepad
 import random
 import snake
 import tetris
+import message
 from enum import Enum
 import os
 
 class GameOptions(Enum):
     SNAKE = 0
     TETRIS = 1
+    MESSAGE = 2
 
 currentPos = 0
 generateNewColor = True
@@ -57,7 +59,6 @@ def keyListener():
     global selectionMade
     while not selectionMade:
         events = get_gamepad()
-        print("Main key listener")
         for event in events:
             if event.code == 'ABS_Y' and event.state == 255:
                 currentSelection = GameOptions((currentSelection.value + 1) % (len(GameOptions)))
@@ -65,7 +66,7 @@ def keyListener():
             if event.code == 'ABS_Y' and event.state == 0:
                 currentSelection = GameOptions((currentSelection.value - 1) % (len(GameOptions)))
                 generateNewColor = True
-            if event.code == 'MSC_SCAN' and event.state == 589826:
+            if event.code == 'BTN_THUMB' and event.state == 1:
                 selectionMade = True
 
 def resetVariables():
@@ -102,10 +103,18 @@ if __name__ == "__main__":
             canvasUpdateThread.join()
 
         if selection == 1:
+            tetris.resetVariables()
             tetrisKeyListener = Thread(target = tetris.keyListener)
             tetrisKeyListener.start()
-            tetris = tetris.Tetris()
-            matrix = tetris.process()
-            tetris.start()
+            tetrisClass = tetris.Tetris()
+            tetrisClass.process()
+            tetrisClass.start()
             tetrisKeyListener.join()
-    
+        
+        if selection == 2:
+            message.resetVariables()
+            message_class = message.Message()
+            matrix = message_class.process()
+            messageKeyListener = Thread(target = message.keyListener)
+            messageKeyListener.start()
+            messageKeyListener.join()

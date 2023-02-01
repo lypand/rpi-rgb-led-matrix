@@ -298,6 +298,28 @@ def keyListener():
             if event.code == 'BTN_BASE4' and gameOver:
                 backToMainMenu = True
 
+def resetVariables():
+    global backToMainMenu
+    global score
+    global currentShape
+    global holdDown
+    global holdLeft 
+    global holdRight 
+    global frozenLocations 
+    global gameOver 
+
+    backToMainMenu = False
+    score = 0
+    currentShape = None
+    holdDown = False
+    holdLeft = False
+    holdRight = False
+    frozenLocations = np.full((33,17), False, dtype=bool)
+    frozenLocations[-1, :] = True
+    frozenLocations[32, :] = True
+    frozenLocations[:, 16] = True
+    gameOver = False
+
 # Main function
 if __name__ == "__main__":
 
